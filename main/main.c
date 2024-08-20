@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <math.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/timers.h"
@@ -24,6 +26,7 @@
 #include "DataManager.h"
 #include "SysMgr.h"
 #include "Servo_driver.h"
+#include "PID_driver.h"
 
 //----------- Our defines --------------
 #define ESP_CORE_0 0
@@ -54,6 +57,9 @@ void task_kpptr_main(void *pvParameter){
 
 	int64_t time_us = esp_timer_get_time();
 
+	int64_t event_time_us = time_us;
+	
+
 	esp_err_t status = ESP_FAIL;
 	while(status != ESP_OK){
 		status  = ESP_OK;
@@ -69,6 +75,20 @@ void task_kpptr_main(void *pvParameter){
 		}
 	} 
 
+	PID_data_t PID_data_d_x;
+	Servo_init(544,2400,60);
+	Servo_enable();
+	Servo_test();
+
+	bool flag = false;
+	PID_data_d_x.kp = 1;
+	PID_data_d_x.ki = 0;
+	PID_data_d_x.kd = 0;
+	PID_data_d_x.maxOutput = 30;
+	PID_data_d_x.minOutput = -30;
+	
+	
+
 	SysMgr_checkout(checkout_main, check_ready);
 	ESP_LOGI(TAG, "Task Main - ready!");
 
@@ -76,7 +96,7 @@ void task_kpptr_main(void *pvParameter){
 	while(1){
 		vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS( 10 ));	// Note - for rate > 100Hz change MS5607 settings
 
-		int64_t time_us = esp_timer_get_time();
+		time_us = esp_timer_get_time();
 
 		Sensors_update();
 		AHRS_compute(time_us, Sensors_get());
@@ -113,6 +133,24 @@ void task_kpptr_main(void *pvParameter){
 			prevTickCountWeb = xLastWakeTime;
 			xQueueOverwrite(queue_MainToWeb, (void *)DataPackage_ptr); // add to Web queue
 		}
+
+		//Start guidance if liftoff detected
+		if(DataPackage_d.flightstate >= 2 && DataPackage_d.flightstate <= 3){
+			if(time_us - event_time_us >= 500000){
+
+				float roll = atan2(2.0f*DataPackage_d.ahrs.q2*DataPackage_d.ahrs.q0 - 2*DataPackage_d.ahrs.q1*DataPackage_d.ahrs.q3, 1.0f - 2*DataPackage_d.ahrs.q2*DataPackage_d.ahrs.q2 - 2*DataPackage_d.ahrs.q3*DataPackage_d.ahrs.q3);
+				roll /= fmax(DataPackage_d.ahrs.ascent_rate_kalman * DataPackage_d.ahrs.ascent_rate_kalman, 1.0);
+				int8_t output = (int8_t)PID_driver_update((int)roll,0,time_us,PID_data_d_x);
+				Servo_drive(output, output, output, output);
+			}
+		}
+
+		//Disable servo after apogee
+		if(DataPackage_d.flightstate >= 4 && !flag){
+			flag = 1;
+			Servo_disable();
+		}
+
 
 	}
 	vTaskDelete(NULL);

@@ -27,3 +27,4 @@ esp_err_t Servo_driveSinglePWM(uint8_t servo_num, int8_t position);
 esp_err_t Servo_drive(int8_t S1_position, int8_t S2_position, int8_t S3_position, int8_t S4_position);
 esp_err_t Servo_configSingle(uint8_t servo_num, int min_pulsewidth, int max_pulsewidth, int frequency);
 servo_t * Servo_get();
+esp_err_t Servo_test();

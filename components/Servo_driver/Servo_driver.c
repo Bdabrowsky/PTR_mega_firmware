@@ -24,6 +24,7 @@ esp_err_t Servo_init(int min_pulsewidth, int max_pulsewidth, int frequency) { re
 esp_err_t Servo_enable() { return ESP_FAIL; }
 esp_err_t Servo_disable() { return ESP_FAIL; }
 esp_err_t Servo_drive(int8_t S1_position, int8_t S2_position, int8_t S3_position, int8_t S4_position) { return ESP_FAIL; }
+esp_err_t Servo_test(){ return ESP_FAIL; }
 servo_t * Servo_get() { return &Servo_d; }
 
 #else
@@ -169,6 +170,18 @@ servo_t * Servo_get(){
  */
 static uint32_t angle_to_PWM(float position, Servo_config_t Servo_config) {
     return (uint32_t)((position + 100) * (Servo_config.max_pulsewidth_us - Servo_config.min_pulsewidth_us) / 200 + Servo_config.min_pulsewidth_us);
+}
+
+esp_err_t Servo_test(){
+	Servo_drive(0, 0, 0, 0);
+	vTaskDelay(pdMS_TO_TICKS( 1000 ));
+	Servo_drive(127, 127, 127, 127);
+	vTaskDelay(pdMS_TO_TICKS( 1000 ));
+	Servo_drive(-128, -128, -128, -128);
+	vTaskDelay(pdMS_TO_TICKS( 1000 ));
+	Servo_drive(0, 0, 0, 0);
+
+	return ESP_OK;
 }
 
 #endif
