@@ -49,8 +49,7 @@ esp_err_t Servo_init(int min_pulsewidth, int max_pulsewidth, int frequency){
 	for(int i=0;i<BOARD_SERVO_PWM_NUM;i++){
 		Servo_config_d[i].min_pulsewidth_us  = min_pulsewidth;
 		Servo_config_d[i].max_pulsewidth_us  = max_pulsewidth;
-		Servo_config_d[i].timebase_frequency
- = frequency;
+		Servo_config_d[i].timebase_frequency = frequency;
 	}
 
 #if defined SERVO_EN_PIN
@@ -76,6 +75,7 @@ esp_err_t Servo_init(int min_pulsewidth, int max_pulsewidth, int frequency){
 
 #endif
 
+	
     return ESP_OK;
 }
 
@@ -169,15 +169,16 @@ servo_t * Servo_get(){
  * @return uint32_t pulsewidth
  */
 static uint32_t angle_to_PWM(float position, Servo_config_t Servo_config) {
-    return (uint32_t)((position + 100) * (Servo_config.max_pulsewidth_us - Servo_config.min_pulsewidth_us) / 200 + Servo_config.min_pulsewidth_us);
+	//return (uint32_t)position;
+	return (uint32_t)((position + 128) * (Servo_config.max_pulsewidth_us - Servo_config.min_pulsewidth_us) / 256 + Servo_config.min_pulsewidth_us);
 }
 
 esp_err_t Servo_test(){
 	Servo_drive(0, 0, 0, 0);
 	vTaskDelay(pdMS_TO_TICKS( 1000 ));
-	Servo_drive(127, 127, 127, 127);
+	Servo_drive(15, 15, 15, 15);
 	vTaskDelay(pdMS_TO_TICKS( 1000 ));
-	Servo_drive(-128, -128, -128, -128);
+	Servo_drive(-15, -15, -15, -15);
 	vTaskDelay(pdMS_TO_TICKS( 1000 ));
 	Servo_drive(0, 0, 0, 0);
 

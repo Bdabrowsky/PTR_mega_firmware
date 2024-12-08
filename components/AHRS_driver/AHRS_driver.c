@@ -140,6 +140,14 @@ static void AHRS_CalcAltitudeP(float press, float ref_press){
 
 static void AHRS_CalcVelocityPosition(){
 	AHRS_kalmanAltitudeAscent_step(AHRS_d.dt, AHRS_d.altitudeP, AHRS_d.acc_up, &(AHRS_d.altitude), &AHRS_d.ascent_rate);
+
+	AHRS_d.V_e.x = AHRS_d.A_e.x * AHRS_d.dt;
+	AHRS_d.V_e.y = AHRS_d.A_e.y * AHRS_d.dt;
+	AHRS_d.V_e.z = AHRS_d.A_e.z * AHRS_d.dt;
+
+	AHRS_d.pos_e.x = AHRS_d.A_e.x * AHRS_d.dt * AHRS_d.dt * 0.5;
+	AHRS_d.pos_e.y = AHRS_d.A_e.y * AHRS_d.dt * AHRS_d.dt * 0.5;
+	AHRS_d.pos_e.y = AHRS_d.A_e.z * AHRS_d.dt * AHRS_d.dt * 0.5;
 }
 
 static void AHRS_CalcOrientation(Sensors_t * sensors, bool useGyro){
@@ -361,9 +369,16 @@ static void AHRS_TransformAccToENU(){
 
 	// From body frame to earth frame
 	quaternionRotateVectorInv(&acc_enu, &acc_rf, &(AHRS_d.orientation.quaternions));
+	
 
 	// Store vertical acceleration (Z component)
 	AHRS_d.acc_up = acc_enu.z - GRAVITY;
+
+	AHRS_d.A_e.x = acc_enu.x;
+	AHRS_d.A_e.y = acc_enu.y;
+	AHRS_d.A_e.z = acc_enu.z - GRAVITY;
+
+
 }
 
 

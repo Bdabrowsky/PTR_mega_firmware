@@ -45,6 +45,10 @@ typedef struct{
 	float ascent_rate;				/*!< Ascent rate (vertical velocity). [m/s] */
 	float altitude;					/*!< Altitude above a reference point. [m] */
 
+	vectorf_t pos_e;				/*!< Position in stationary reference frame .[m] */
+	vectorf_t V_e;					/*!< Velocity in stationary reference frame .[m] */
+	vectorf_t A_e;					/*!< Acceleration in stationary reference frame .[m] */
+
 	vectorf_t acc_rf;				/*!< Acceleration in the rocket frame. */
 
 	orientation_t orientation;		/*!< Orientation of the device. */

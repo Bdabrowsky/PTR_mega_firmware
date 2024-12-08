@@ -40,9 +40,8 @@ QueueHandle_t queue_MainToTelemetry;
 QueueHandle_t queue_MainToWeb;
 
 /**
- * @brief Main Task with sensors handling, data managment, AHRS calculations
+ * @brief Main Task with sensors handling, data management, AHRS calculations
  * and Flight State Detection
- *
  * @param pvParameter
  */
 void task_kpptr_main(void *pvParameter){
@@ -60,6 +59,9 @@ void task_kpptr_main(void *pvParameter){
 	int64_t event_time_us = time_us;
 	
 
+	
+		
+	
 	esp_err_t status = ESP_FAIL;
 	while(status != ESP_OK){
 		status  = ESP_OK;
@@ -74,20 +76,6 @@ void task_kpptr_main(void *pvParameter){
 			vTaskDelay(pdMS_TO_TICKS( 1000 ));
 		}
 	} 
-
-	PID_data_t PID_data_d_x;
-	Servo_init(544,2400,60);
-	Servo_enable();
-	Servo_test();
-
-	bool flag = false;
-	PID_data_d_x.kp = 1;
-	PID_data_d_x.ki = 0;
-	PID_data_d_x.kd = 0;
-	PID_data_d_x.maxOutput = 30;
-	PID_data_d_x.minOutput = -30;
-	
-	
 
 	SysMgr_checkout(checkout_main, check_ready);
 	ESP_LOGI(TAG, "Task Main - ready!");
@@ -132,33 +120,14 @@ void task_kpptr_main(void *pvParameter){
 		if(((prevTickCountWeb + pdMS_TO_TICKS( 1000 )) <= xLastWakeTime)){
 			prevTickCountWeb = xLastWakeTime;
 			xQueueOverwrite(queue_MainToWeb, (void *)DataPackage_ptr); // add to Web queue
-		}
-
-		//Start guidance if liftoff detected
-		if(DataPackage_d.flightstate >= 2 && DataPackage_d.flightstate <= 3){
-			if(time_us - event_time_us >= 500000){
-
-				float roll = atan2(2.0f*DataPackage_d.ahrs.q2*DataPackage_d.ahrs.q0 - 2*DataPackage_d.ahrs.q1*DataPackage_d.ahrs.q3, 1.0f - 2*DataPackage_d.ahrs.q2*DataPackage_d.ahrs.q2 - 2*DataPackage_d.ahrs.q3*DataPackage_d.ahrs.q3);
-				roll /= fmax(DataPackage_d.ahrs.ascent_rate_kalman * DataPackage_d.ahrs.ascent_rate_kalman, 1.0);
-				int8_t output = (int8_t)PID_driver_update((int)roll,0,time_us,PID_data_d_x);
-				Servo_drive(output, output, output, output);
-			}
-		}
-
-		//Disable servo after apogee
-		if(DataPackage_d.flightstate >= 4 && !flag){
-			flag = 1;
-			Servo_disable();
-		}
-
+		}		
 
 	}
 	vTaskDelete(NULL);
 }
 
 /**
- * @brief Task dedicatet to telemetry handling
- *
+ * @brief Task dedicated to telemetry handling
  * @param pvParameter
  */
 void task_kpptr_telemetry(void *pvParameter){
@@ -186,7 +155,6 @@ void task_kpptr_telemetry(void *pvParameter){
 
 /**
  * @brief Task that manages data storage
- *
  * @param pvParameter
  */
 void task_kpptr_storage(void *pvParameter){
@@ -208,7 +176,7 @@ void task_kpptr_storage(void *pvParameter){
 	while(1){
 		vTaskDelayUntil(&xLastWakeTime, 2);	// Minimum 2 Ticks for 1 loop - avoid blocking Flash memory for too long
 
-		if((FSD_getState() >= FLIGHTSTATE_ME_ACCELERATING) && (FSD_getState() < FLIGHTSTATE_SHUTDOWN)){
+		if((FSD_getState() >= FLIGHTSTATE_BOOST) && (FSD_getState() < FLIGHTSTATE_SHUTDOWN)){
 			if(DM_getUsedPointerFromMainRB_wait(&DataPackage_ptr) == ESP_OK){	//wait max 100ms for new data
 				if(write_error_cnt < 1000){
 					if(Storage_writePacket((void*)DataPackage_ptr, sizeof(DataPackage_t)) != ESP_OK){

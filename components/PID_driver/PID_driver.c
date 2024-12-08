@@ -1,7 +1,7 @@
 #include "PID_driver.h"
 
 #include <stdio.h>
-/*
+
 esp_err_t PID_driver_init(float KP, float KI, float KD, float MAX, float MIN, PID_data_t PID){
     PID.kp = KP;
     PID.ki = KI;
@@ -11,7 +11,7 @@ esp_err_t PID_driver_init(float KP, float KI, float KD, float MAX, float MIN, PI
     PID.minOutput = MIN;
     
     return ESP_OK;
-}*/
+}
 
 float PID_driver_update(float value, float setpoint, float time_us, PID_data_t PID){
 
